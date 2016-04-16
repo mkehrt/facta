@@ -14,7 +14,6 @@ typedef struct facta_header {
 typedef struct facta_type {
   facta_header header;
   char*(*print)(struct facta_type*);
-  void(*destroy)(struct facta_type*);
 } facta_type;
 
 typedef struct facta_context {
@@ -34,7 +33,7 @@ typedef struct facta_environment {
 typedef struct facta_expression {
   facta_header header;
   facta_type* (*typecheck)(facta_context*, struct facta_expression*);
-  struct facta_expression_s* (*evaluate)(facta_environment*, struct facta_expression*);
+  struct facta_expression* (*evaluate)(facta_environment*, struct facta_expression*);
   char* (*print)(struct facta_expression*);
 } facta_expression;
 
@@ -62,10 +61,9 @@ typedef struct facta_type_int {
 
 
 char* facta_type_int_print(facta_type* ty) {
-  return "int";
-}
-
-void facta_type_int_destroy(facta_type* ty) {
+  char* ret = (char*)malloc(4);
+  sprintf(ret, "int");
+  return ret;
 }
 
 facta_type_int facta_type_int_static = {
@@ -76,8 +74,7 @@ facta_type_int facta_type_int_static = {
       facta_noop,
       facta_noop
     },
-    facta_type_int_print,
-    facta_type_int_destroy
+    facta_type_int_print
   }
 };
 
@@ -118,7 +115,7 @@ facta_type* facta_type_arrow_create(facta_type* left, facta_type* right) {
   left->header.retain(&left->header);
   right->header.retain(&right->header);
 
-  facta_type_arrow* ty = (facta_type_arrow*)sizeof(facta_type_arrow);
+  facta_type_arrow* ty = (facta_type_arrow*)malloc(sizeof(facta_type_arrow));
 
   ty->type_header.header.ref_count = 1;
   ty->type_header.header.retain = facta_retain;
@@ -140,10 +137,10 @@ int main() {
   facta_type* arr = facta_type_arrow_create(i1, i2);
 
   i1->header.release(&i1->header);
-  i2->header.release(&i1->header);
+  i2->header.release(&i2->header);
 
   char* s = arr->print(arr);
-  printf("%s", s);
+  printf("%s\n", s);
   free(s);
 
   arr->header.release(&arr->header);
